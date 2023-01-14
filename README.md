@@ -1,4 +1,4 @@
-![FoodgramFastAPI workflow](https://github.com/PivnoyFei/webtronics_social_networking/actions/workflows/main.yml/badge.svg)
+[![Build Status](https://github.com/PivnoyFei/webtronics_social_networking/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/PivnoyFei/webtronics_social_networking/actions/workflows/main.yml)
 
 <h1 align="center"><a target="_blank" href="">webtronics_social_networking</a></h1>
 
