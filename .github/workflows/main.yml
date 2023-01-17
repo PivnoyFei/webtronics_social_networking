@@ -48,6 +48,6 @@ jobs:
       - name: Pytest
         run: |
           cd infra
-          docker-compose exec backend-test pytest
+          docker-compose exec -T backend-test pytest
 
     
