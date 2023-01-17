@@ -31,23 +31,24 @@ jobs:
     name: Docker image
     runs-on: ubuntu-latest
     needs: tests
+    defaults:
+      run:
+        working-directory: ./infra
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: 'Create env file'
+      - name: Create env file
         run: |
-          cd infra
           touch .env
           echo "${{ secrets.ENV_FILE }}" > .env
           cat .env
-      - name: Build docker image backend-tests 
+      - name: Build docker image backend-test
         run: |
-          cd infra
-          docker-compose up -d backend-test
+          cd test
+          docker-compose up -d --build
       - name: Pytest
         run: |
-          cd infra
+          cd test
           docker-compose exec -T backend-test pytest
 
     

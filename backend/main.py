@@ -5,9 +5,10 @@ from fastapi import FastAPI, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from posts import api_posts
 from settings import MEDIA_ROOT
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from users import api_auth, api_user
+from users import api_auth, api_users
 
 app = FastAPI()
 app.state.database = database
@@ -50,4 +51,5 @@ async def validation_exception_handler(request: Any, exc: Any) -> JSONResponse:
 
 
 app.include_router(api_auth.router, prefix="/api")
-app.include_router(api_user.router, prefix="/api")
+app.include_router(api_users.router, prefix="/api")
+app.include_router(api_posts.router, prefix="/api")
