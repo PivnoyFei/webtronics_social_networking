@@ -41,14 +41,10 @@ jobs:
           touch .env
           echo "${{ secrets.ENV_FILE }}" > .env
           cat .env
-
-      #- name: Build docker image
-      #  run: docker-compose build
-
-      - name: Build docker image backend-tests
+      - name: Build docker image backend-tests 
         run: |
           cd infra
-          docker-compose up backend-test
+          docker-compose up -d backend-test
       - name: Pytest
         run: |
           cd infra
