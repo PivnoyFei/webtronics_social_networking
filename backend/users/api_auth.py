@@ -15,7 +15,7 @@ db_user = User(database)
 db_token = Token(database)
 
 
-@router.post("/token/login", response_model=TokenSchema)
+@router.post("/token/login", response_model=TokenSchema, status_code=status.HTTP_200_OK)
 async def login(request: Request, user: OAuth2Form = Depends()) -> Any:
     """ Authorization by username and password, issues a token. """
     user_cls = await db_user.id_password_by_username(user.username)
@@ -29,7 +29,6 @@ async def login(request: Request, user: OAuth2Form = Depends()) -> Any:
             {"detail": "Incorrect password"},
             status.HTTP_400_BAD_REQUEST
         )
-
     if request.client is not None:
         if not await db_token.check_token(request.client.host, user_cls.id):
             await db_token.create_token(request.client.host, user_cls.id)
@@ -40,7 +39,7 @@ async def login(request: Request, user: OAuth2Form = Depends()) -> Any:
     }
 
 
-@router.post('/token/refresh', response_model=TokenSchema)
+@router.post('/token/refresh', response_model=TokenSchema, status_code=status.HTTP_200_OK)
 async def refresh_token(request: Request, token: TokenBase) -> Any:
     if request.client is not None:
         user_id = await utils.check_token(
@@ -54,6 +53,6 @@ async def refresh_token(request: Request, token: TokenBase) -> Any:
     }
 
 
-@router.post("/token/logout/")
+@router.post("/token/logout/", status_code=status.HTTP_404_NOT_FOUND)
 async def logout(user: UserOut = Depends(utils.get_current_user)) -> None:
     await db_token.delete_by_id(user.id)

@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel, EmailStr, Field, validator
@@ -41,8 +40,8 @@ class TokenSchema(BaseModel):
 
 
 class TokenPayload(BaseModel):
-    sub: Optional[int] = None
-    exp: Optional[int] = None
+    sub: int
+    exp: int
 
 
 class TokenBase(BaseModel):

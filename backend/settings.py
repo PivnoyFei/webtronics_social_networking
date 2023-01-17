@@ -32,3 +32,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MEDIA_URL = 'media'
 MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
+
+""" For tests. """
+HOST = "192.168.123.132"

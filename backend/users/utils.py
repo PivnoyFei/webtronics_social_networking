@@ -6,14 +6,13 @@ from db import database
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+from passlib.hash import bcrypt
 from pydantic import ValidationError
 from users.models import Token, User
 from users.schemas import TokenPayload
 
 db_user = User(database)
 db_token = Token(database)
-password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/auth/token/login",
     scheme_name="JWT"
@@ -22,12 +21,12 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 async def get_hashed_password(password: str) -> str:
     """ Hashes the user's password. """
-    return password_context.hash(password)
+    return bcrypt.hash(password)
 
 
 async def verify_password(password: str, hashed_pass: str) -> bool:
     """ Validates a hashed user password. """
-    return password_context.verify(password, hashed_pass)
+    return bcrypt.verify(password, hashed_pass)
 
 
 async def _get_token(sub: str, secret: str, expire_minutes: int) -> str:
