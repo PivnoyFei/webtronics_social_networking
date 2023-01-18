@@ -1,6 +1,8 @@
 import os
 
 from dotenv import load_dotenv
+from fastapi import status
+from fastapi.responses import JSONResponse
 
 load_dotenv()
 
@@ -32,6 +34,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MEDIA_URL = 'media'
 MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
+
+NOT_FOUND = JSONResponse({"detail": "NotFound"}, status.HTTP_404_NOT_FOUND)
 
 """ For tests. """
 HOST = "192.168.123.132"

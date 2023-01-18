@@ -1,16 +1,17 @@
 from typing import Any
-from asyncpg.exceptions import UniqueViolationError
+
 import sqlalchemy as sa
 from asyncpg import Record
+from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
 from db import Base, metadata
 from posts.schemas import PostCreate
+from settings import NOT_FOUND
 from sqlalchemy.sql import func
 
 posts = sa.Table(
     "posts", metadata,
     sa.Column("id", sa.Integer, primary_key=True),
     sa.Column("text", sa.Text),
-    # sq.Column("image", sa.String(255), unique=True),
     sa.Column("author", sa.Integer, sa.ForeignKey("users.id", ondelete='CASCADE')),
     sa.Column("timestamp", sa.DateTime(timezone=True), default=func.now()),
     sa.Column("update_date", sa.DateTime(timezone=True), default=None, onupdate=func.now()),
@@ -37,8 +38,35 @@ class Post(Base):
             sa.insert(posts).values(post_items).returning(posts)
         )
 
-    async def posts_all(self) -> list[Record] | None:
-        return await self.database.fetch_all(sa.select(posts))
+    async def posts_count(self, author: int | None = None) -> Record:
+        query = sa.select(func.count(posts.c.id).label("is_count"))
+        if author:
+            query = query.where(posts.c.author == author)
+        return await self.database.fetch_one(query)
+
+    async def posts_all(
+        self,
+        page: int = 1,
+        limit: int = 6,
+        author: int | None = None
+    ) -> list[Record]:
+
+        query = (
+            sa.select(
+                posts,
+                func.count(likes.c.user_id).label("like"),
+                func.count(dislikes.c.user_id).label("dislike")
+            )
+            .join(likes, likes.c.post_id == posts.c.id, full=True)
+            .join(dislikes, dislikes.c.post_id == posts.c.id, full=True)
+            .limit(limit)
+            .offset((page - 1) * limit)
+            .group_by(posts.c.id)
+            .order_by(posts.c.timestamp.desc())
+        )
+        if author:
+            query = query.where(posts.c.author == author)
+        return await self.database.fetch_all(query)
 
     async def post_by_id(self, post_id: int) -> Record | None:
         return await self.database.fetch_one(
@@ -76,17 +104,18 @@ class Post(Base):
 
 
 class LikeDislike(Base):
-    async def count(self, post_id: int) -> dict[int, int]:
-        """ Counts the number of likes and dislikes, returns a dictionary. """
-        count_likes = await self.database.fetch_one(
-            sa.select(func.count(likes.c.user_id).label("like"))
-            .where(likes.c.post_id == post_id)
+    async def count(self, post_id: int) -> Record:
+        """ Counts the number of likes and dislikes. """
+        return await self.database.fetch_one(
+            sa.select(
+                func.count(likes.c.user_id).label("like"),
+                func.count(dislikes.c.user_id).label("dislike")
+            )
+            .join(likes, likes.c.post_id == posts.c.id, full=True)
+            .join(dislikes, dislikes.c.post_id == posts.c.id, full=True)
+            .where(posts.c.id == post_id)
+            .group_by(posts.c.id)
         )
-        count_dislikes = await self.database.fetch_one(
-            sa.select(func.count(dislikes.c.user_id).label("dislike"))
-            .where(dislikes.c.post_id == post_id)
-        )
-        return {"like": int(count_likes.like), "dislike": int(count_dislikes.dislike)}
 
     async def _delete(self, post_id: int, user_id: int, model: Any) -> Any:
         """ Gets the likes or dislikes model and removes what is needed. """
@@ -100,7 +129,7 @@ class LikeDislike(Base):
             sa.insert(model).values(post_id=post_id, user_id=user_id)
         )
 
-    async def like(self, post_id: int, user_id: int, like: bool = False) -> dict[int, int]:
+    async def like(self, post_id: int, user_id: int, like: bool = False) -> Record:
         """
         The input receives a bool value like this or not.
         If like, creates like and removes dislikes.
@@ -113,6 +142,8 @@ class LikeDislike(Base):
             await self._create(post_id, user_id, model_one)
         except UniqueViolationError:
             await self._delete(post_id, user_id, model_one)
+        except ForeignKeyViolationError:
+            return NOT_FOUND
         else:
             await self._delete(post_id, user_id, model_two)
         return await self.count(post_id)
