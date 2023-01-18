@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -15,3 +16,12 @@ class PostBase(BaseModel):
 class PostCreate(BaseModel):
     text: str
     # image: str | None
+
+
+class PostLike(BaseModel):
+    like: Optional[int] = None
+    dislike: Optional[int] = None
+
+
+class PostDetail(PostLike, PostBase):
+    pass

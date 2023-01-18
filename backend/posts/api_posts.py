@@ -3,17 +3,19 @@ from typing import Any
 from db import database
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from posts.models import Post
-from posts.schemas import PostBase, PostCreate
+from posts.models import Post, LikeDislike
+from posts.schemas import PostBase, PostCreate, PostLike, PostDetail
 from users.schemas import UserOut
 from users.utils import get_current_user
+from posts.utils import query_list
 
 router = APIRouter(prefix='/posts', tags=["posts"])
 db_post = Post(database)
+db_like = LikeDislike(database)
 PROTECTED = Depends(get_current_user)
 
 
-@router.get("/", response_model=list[PostBase], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=list[PostDetail], status_code=status.HTTP_200_OK)
 async def get_posts() -> list | None:
     """ Viewing all posts is available to everyone. """
     return await db_post.posts_all()
@@ -27,7 +29,7 @@ async def create_post(post_items: PostCreate, user: UserOut = PROTECTED) -> Post
     return await db_post.create(post_dict)
 
 
-@router.get("/{post_id}", response_model=PostBase, status_code=status.HTTP_200_OK)
+@router.get("/{post_id}", response_model=PostDetail, status_code=status.HTTP_200_OK)
 async def get_post(post_id: int) -> Any:
     """ The post is available to everyone. """
     return await db_post.post_by_id(post_id)
@@ -54,3 +56,13 @@ async def delete_post(post_id: int, user: UserOut = PROTECTED) -> Any:
             status.HTTP_403_FORBIDDEN,
         )
     return JSONResponse({"detail": "Removed"}, status.HTTP_404_NOT_FOUND)
+
+
+@router.post("/{post_id}/like", response_model=PostLike)
+async def like(post_id: int, user: UserOut = PROTECTED) -> dict[int, int]:
+    return await db_like.like(post_id, user.id, True)
+
+
+@router.post("/{post_id}/dislike", response_model=PostLike)
+async def dislike(post_id: int, user: UserOut = PROTECTED) -> dict[int, int]:
+    return await db_like.like(post_id, user.id, False)
