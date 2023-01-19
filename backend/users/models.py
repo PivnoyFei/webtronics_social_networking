@@ -83,3 +83,11 @@ class User(Base):
                 last_name=user.last_name,
             ).returning(users.c.id)
         )
+
+    async def update_password(self, password: str, user_id: int) -> Record | None:
+        return await self.database.execute(
+            users.update()
+            .where(users.c.id == user_id)
+            .values(password=password)
+            .returning(users.c.id)
+        )

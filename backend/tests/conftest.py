@@ -1,3 +1,4 @@
+import dataclasses
 from typing import Any, Generator
 
 import pytest
@@ -6,6 +7,16 @@ from db import metadata
 from fastapi.testclient import TestClient
 from main import app
 from settings import DATABASE_URL, HOST
+
+
+@dataclasses.dataclass
+class Cache:
+    headers = {"authorization": "Bearer"}
+    user_one = {}
+    user_other = {}
+    headers_other = {"authorization": "Bearer"}
+    refresh_token = {"refresh_token": ""}
+    post = []
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -17,7 +28,7 @@ def create_test_database() -> Generator:
     metadata.drop_all(engine)
 
 
-@pytest.fixture()
+@pytest.fixture
 def client() -> Generator:
     """ We connect to the database. """
     with TestClient(app) as client:
@@ -84,4 +95,19 @@ def username_exists() -> dict:
         "last_name": "unique",
         "email": "unique@fake.fake",
         "password": "unique",
+    }
+
+
+@pytest.fixture
+def post() -> list:
+    return [{"text": f"test-{i}"} for i in range(50)]
+
+
+@pytest.fixture
+def answer() -> dict:
+    return {
+        "count": 0,
+        "next": None,
+        "previous": None,
+        "results": []
     }
