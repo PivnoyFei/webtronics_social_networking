@@ -53,6 +53,6 @@ async def refresh_token(request: Request, token: TokenBase) -> Any:
     }
 
 
-@router.post("/token/logout/", status_code=status.HTTP_404_NOT_FOUND)
+@router.post("/token/logout", status_code=status.HTTP_404_NOT_FOUND)
 async def logout(user: UserOut = Depends(utils.get_current_user)) -> None:
     await db_token.delete_by_id(user.id)

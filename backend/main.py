@@ -4,17 +4,13 @@ from db import database, engine, metadata
 from fastapi import FastAPI, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from posts import api_posts
-from settings import MEDIA_ROOT
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from users import api_auth, api_users
 
 app = FastAPI()
 app.state.database = database
 metadata.create_all(engine)
-
-app.mount("/media", StaticFiles(directory=MEDIA_ROOT), name="media")
 
 
 @app.on_event("startup")
