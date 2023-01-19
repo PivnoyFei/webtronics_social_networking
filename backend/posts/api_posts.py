@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from posts.models import LikeDislike, Post
 from posts.schemas import PostBase, PostCreate, PostDetail, PostLike, PostList
-from posts.utils import query_list
+from posts.utils import check_author, query_list
 from settings import NOT_FOUND
 from starlette.requests import Request
 from users.schemas import UserOut
@@ -20,11 +20,14 @@ PROTECTED = Depends(get_current_user)
 @router.get("/", response_model=PostList, status_code=status.HTTP_200_OK)
 async def get_posts(
     request: Request,
-    page: int = Query(1),
-    limit: int = Query(6),
+    page: int = Query(1, ge=1),
+    limit: int = Query(6, ge=1),
     author: int | None = Query(None)
 ) -> dict:
-    """ Viewing all posts is available to everyone. """
+    """
+    Viewing all posts is available to everyone.
+    Implemented pagination and filtering by author.
+    """
     query = await db_post.posts_all(page, limit, author)
     count = await db_post.posts_count(author)
     return await query_list(query, request, count[0], page, limit)
@@ -76,10 +79,10 @@ async def like(post_id: int, user: UserOut = PROTECTED) -> Any:
     When creating a like, it removes the dislike,
     if there is a like, it simply removes the like.
     """
-    return await db_like.like(post_id, user.id, True)
+    return await check_author(post_id, user.id, True)
 
 
 @router.post("/{post_id}/dislike", response_model=PostLike, status_code=status.HTTP_200_OK)
 async def dislike(post_id: int, user: UserOut = PROTECTED) -> Any:
     """ Does the same as the like function, only with dislikes. """
-    return await db_like.like(post_id, user.id, False)
+    return await check_author(post_id, user.id, False)
