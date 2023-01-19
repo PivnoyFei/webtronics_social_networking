@@ -12,33 +12,36 @@
 ![Nginx](https://img.shields.io/badge/Nginx-171515?style=flat-square&logo=Nginx)
 ![GitHub](https://img.shields.io/badge/GitHub-171515?style=flat-square&logo=GitHub)
 
-## Описание
-|Название|Метод|Описание|Авторизация|
-|--------|-----|--------|-----------|
-|/users/signup |POST |Регистрация нового пользователя |Нет
-|/users/me |GET |Возвращает самого себя |Да
-|/users/&lt;id&gt; |GET |Посмотреть профиль пользователя |Нет
-|/users/set_password |PUT |Смена пароля |Да
-|/auth/token/login |POST |Авторизация, получение jwt-токена |Нет
-|/auth/token/refresh |POST |Обновить токен |Да
-|/auth/token/logout |POST |Выйти, удаляет все refresh-токены из бд |Да
-|/posts/ |GET |Получение всех записей, реализована пагинация и фильтрация по автору |Нет
-|/posts/create |POST |Создание нового поста |Да
-|/posts/&lt;id&gt; |GET |Получение деталей поста |Нет
-|/posts/&lt;id&gt;/ |PUT |Сообщения редактируются только автором |Да
-|/posts/&lt;id&gt;/ |DELETE |Сообщения удаляются только автором |Да
-|/posts/&lt;id&gt;/like/ |POST |При создании лайка снимает дизлайк, если есть лайк, то просто удаляет лайк |Да
-|/posts/&lt;id&gt;/dislike/|POST |Делает то же самое, что и функция лайка, только с дизлайками |Да
+### Описание
+Тестовое задание для webtronics, социальная сеть на FastAPI
+
+### Маршруты
+| Название | Метод | Описание | Авторизация |
+|----------|-------|----------|-------------|
+| /api/users/signup | POST | Регистрация нового пользователя | Нет
+| /api/users/me | GET | Возвращает самого себя | Да
+| /api/users/&lt;id&gt; | GET | Посмотреть профиль пользователя | Нет
+| /api/users/set_password | PUT | Смена пароля | Да
+| /api/auth/token/login | POST | Авторизация, получение jwt-токена | Нет
+| /api/auth/token/refresh | POST | Обновить токен | Да
+| /api/auth/token/logout | POST | Выйти, удаляет все refresh-токены из бд | Да
+| /api/posts/ | GET | Получение всех записей, реализована пагинация и фильтрация по автору | Нет
+| /api/posts/create | POST | Создание нового поста | Да
+| /api/posts/&lt;id&gt; | GET | Получение деталей поста | Нет
+| /api/posts/&lt;id&gt; | PUT | Сообщения редактируются только автором | Да
+| /api/posts/&lt;id&gt; | DELETE | Сообщения удаляются только автором | Да
+| /api/posts/&lt;id&gt;/like | POST | При создании лайка снимает дизлайк, если есть лайк, то просто удаляет лайк | Да
+| /api/posts/&lt;id&gt;/dislike | POST | Делает то же самое, что и функция лайка, только с дизлайками | Да
 
 
 ### Запуск проекта
 Клонируем репозиторий и переходим в него:
 ```bash
-https://github.com/PivnoyFei/webtronics_social_networking.git
+gh clone https://github.com/PivnoyFei/webtronics_social_networking
 cd webtronics_social_networking
 ```
 
-## Для выстрого запуска (поднимаем только контейнер бд) создадим виртуальное окружение и установим зависимости:
+### Для быстрого запуска (поднимаем только контейнер бд) создадим виртуальное окружение и установим зависимости:
 #### Создаем и активируем виртуальное окружение:
 ```bash
 python3 -m venv venv
@@ -72,10 +75,13 @@ JWT_SECRET_KEY = "key"
 JWT_REFRESH_SECRET_KEY = "key"
 ```
 
-#### Чтобы сгенерировать безопасный случайный секретный ключ, используйте команду ```openssl rand -hex 32```:
+#### Чтобы сгенерировать безопасный случайный секретный ключ, используйте команду:
+```bash
+openssl rand -hex 32
+```
 
 
-## Быстрый запуск, из контейнеров запускаем только бд:
+### Быстрый запуск, из контейнеров запускаем только бд:
 ```bash
 docker-compose up -d <название контейнера, например: db>
 ```
@@ -85,7 +91,7 @@ docker-compose up -d <название контейнера, например: d
 uvicorn main:app --reload --host 0.0.0.0
 ```
 
-## Запуск проекта с полной сборкой
+### Запуск проекта с полной сборкой
 ```bash
 docker-compose up -d --build
 ```
@@ -96,6 +102,11 @@ docker-compose exec backend alembic revision --message="Initial" --autogenerate
 docker-compose exec backend alembic upgrade head
 ```
 
+### Документация доступна по адресу
+```bash
+http://127.0.0.1:8000/docs#/
+http://127.0.0.1:8000/redoc#/
+```
 #### Останавливаем контейнеры:
 ```bash
 docker-compose down -v
