@@ -39,6 +39,7 @@ async def check_author(post_id: int, user_id: int, like: bool) -> Any:
     if author.author == user_id:
         return JSONResponse(
             {"detail": "Just not your post"},
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_418_IM_A_TEAPOT,
+            # as option HTTP_403_FORBIDDEN
         )
     return await db_like.like(post_id, user_id, like)

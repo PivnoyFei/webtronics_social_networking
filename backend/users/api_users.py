@@ -28,7 +28,7 @@ async def create_user(user: UserCreate) -> UserOut | JSONResponse:
 
 
 @router.get('/me', response_model=UserOut, status_code=status.HTTP_200_OK)
-async def get_me(user: UserOut = PROTECTED) -> UserOut:
+async def me(user: UserOut = PROTECTED) -> UserOut:
     """ Get details of currently logged in user. """
     return user
 

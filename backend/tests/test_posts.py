@@ -104,7 +104,7 @@ def test_post_like_author(client: Any) -> None:
     response = client.post(
         f"/api/posts/{Cache.post[1]}/like", headers=Cache.headers
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_418_IM_A_TEAPOT
     assert response.json() == {"detail": "Just not your post"}
 
 
@@ -128,7 +128,7 @@ def test_post_dislike_author(client: Any) -> None:
     response = client.post(
         f"/api/posts/{Cache.post[1]}/dislike", headers=Cache.headers
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_418_IM_A_TEAPOT
     assert response.json() == {"detail": "Just not your post"}
 
 

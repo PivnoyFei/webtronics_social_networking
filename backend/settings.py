@@ -30,11 +30,6 @@ DATABASE_URL = (f"postgresql://{POSTGRES_USER}:"
                 f"{POSTGRES_PORT}/"
                 f"{POSTGRES_DB}")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-MEDIA_URL = 'media'
-MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
-
 NOT_FOUND = JSONResponse({"detail": "NotFound"}, status.HTTP_404_NOT_FOUND)
 
 """ For tests. """
