@@ -45,8 +45,6 @@ jobs:
       - name: Build docker image backend-test
         run: |
           cd test
-          sudo docker-compose stop
-          sudo docker-compose rm backend
           sudo docker-compose up -d --build
       - name: Pytest
         run: |
