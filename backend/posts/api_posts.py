@@ -15,7 +15,7 @@ from users.utils import get_current_user
 router = APIRouter(prefix='/posts', tags=["posts"])
 db_post = Post(database)
 db_like = LikeDislike(database)
-db_redis = Redis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
+db_redis = Redis.from_url(REDIS_URL, decode_responses=True)
 PROTECTED = Depends(get_current_user)
 
 
@@ -50,11 +50,11 @@ async def get_post(post_id: int) -> Any:
     if not query:
         return NOT_FOUND
     query_dict = dict(query)
-    like_redis = db_redis.hgetall(f"id={post_id}")
+    like_redis: dict = db_redis.hgetall(f"id={post_id}")
+
     if not like_redis:
-        like_record = await db_like.count(post_id)
-        like_redis = dict(like_record)
-        db_redis.hmset(f"id={post_id}", like_record)
+        like_redis = dict(await db_like.count(post_id))
+        db_redis.hmset(f"id={post_id}", like_redis)
 
     query_dict.update(like_redis)
     return query_dict

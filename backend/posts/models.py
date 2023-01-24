@@ -9,7 +9,7 @@ from redis import Redis
 from settings import NOT_FOUND, REDIS_URL
 from sqlalchemy.sql import func
 
-db_redis = Redis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
+db_redis = Redis.from_url(REDIS_URL, decode_responses=True)
 
 posts = sa.Table(
     "posts", metadata,
