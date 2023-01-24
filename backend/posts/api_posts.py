@@ -6,7 +6,8 @@ from fastapi.responses import JSONResponse
 from posts.models import LikeDislike, Post
 from posts.schemas import PostBase, PostCreate, PostDetail, PostLike, PostList
 from posts.utils import check_author, query_list
-from settings import NOT_FOUND
+from redis import Redis
+from settings import NOT_FOUND, REDIS_URL
 from starlette.requests import Request
 from users.schemas import UserOut
 from users.utils import get_current_user
@@ -14,6 +15,7 @@ from users.utils import get_current_user
 router = APIRouter(prefix='/posts', tags=["posts"])
 db_post = Post(database)
 db_like = LikeDislike(database)
+db_redis = Redis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
 PROTECTED = Depends(get_current_user)
 
 
@@ -45,9 +47,17 @@ async def create_post(post_items: PostCreate, user: UserOut = PROTECTED) -> Post
 async def get_post(post_id: int) -> Any:
     """ The post is available to everyone. """
     query = await db_post.post_by_id(post_id)
-    if query:
-        return query
-    return NOT_FOUND
+    if not query:
+        return NOT_FOUND
+    query_dict = dict(query)
+    like_redis = db_redis.hgetall(f"id={post_id}")
+    if not like_redis:
+        like_record = await db_like.count(post_id)
+        like_redis = dict(like_record)
+        db_redis.hmset(f"id={post_id}", like_record)
+
+    query_dict.update(like_redis)
+    return query_dict
 
 
 @router.put("/{post_id}", response_model=PostBase, status_code=status.HTTP_200_OK)

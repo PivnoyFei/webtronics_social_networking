@@ -19,7 +19,9 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", default="postgres")
 POSTGRES_SERVER = os.getenv("POSTGRES_SERVER", default="localhost")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", default="5432")
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='localhost')
+REDIS_HOST = os.getenv("REDIS_HOST", default="localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", default="6379")
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
 TESTING = os.getenv("TESTING", default="False")
 if TESTING == "True":

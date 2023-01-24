@@ -55,7 +55,7 @@ async def create_refresh_token(sub: str) -> str:
     )
 
 
-async def check_token(token: str, secret: str, refresh: str = '') -> Any:
+async def check_token(token: str, secret: str, refresh_host: str = '') -> Any:
     """
     Checks the token time.
     if refresh_token checks if the IP address exists in the database.
@@ -72,15 +72,15 @@ async def check_token(token: str, secret: str, refresh: str = '') -> Any:
         )
         token_data = TokenPayload(**payload)
 
-        if not refresh:
+        if not refresh_host:
             if datetime.fromtimestamp(token_data.exp) < datetime.now():
                 raise exception
         else:
-            if await db_token.check_token(refresh, token_data.sub):
+            if await db_token.check_token(refresh_host, token_data.sub):
                 return token_data.sub
             else:
                 await db_token.delete_by_id(token_data.sub)
-                raise exception
+            raise exception
 
     except (JWTError, ValidationError):
         raise exception
