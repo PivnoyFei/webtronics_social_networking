@@ -5,8 +5,11 @@ from asyncpg import Record
 from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
 from db import Base, metadata
 from posts.schemas import PostCreate
-from settings import NOT_FOUND
+from redis import Redis
+from settings import NOT_FOUND, REDIS_URL
 from sqlalchemy.sql import func
+
+db_redis = Redis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
 
 posts = sa.Table(
     "posts", metadata,
@@ -70,15 +73,7 @@ class Post(Base):
 
     async def post_by_id(self, post_id: int) -> Record | None:
         return await self.database.fetch_one(
-            sa.select(
-                posts,
-                func.count(likes.c.user_id).label("like"),
-                func.count(dislikes.c.user_id).label("dislike")
-            )
-            .join(likes, likes.c.post_id == posts.c.id, full=True)
-            .join(dislikes, dislikes.c.post_id == posts.c.id, full=True)
-            .where(posts.c.id == post_id)
-            .group_by(posts.c.id)
+            sa.select(posts).where(posts.c.id == post_id)
         )
 
     async def author_by_id(self, post_id: int) -> Record | None:
@@ -129,7 +124,7 @@ class LikeDislike(Base):
             sa.insert(model).values(post_id=post_id, user_id=user_id)
         )
 
-    async def like(self, post_id: int, user_id: int, like: bool = False) -> Record:
+    async def like(self, post_id: int, user_id: int, like: bool = False) -> Any:
         """
         The input receives a bool value like this or not.
         If like, creates like and removes dislikes.
@@ -146,4 +141,7 @@ class LikeDislike(Base):
             return NOT_FOUND
         else:
             await self._delete(post_id, user_id, model_two)
-        return await self.count(post_id)
+
+        record = dict(await self.count(post_id))
+        db_redis.hmset(f"id={post_id}", record)
+        return record

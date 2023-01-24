@@ -1,7 +1,11 @@
 from typing import Any
 
 from fastapi import status
+from redis import Redis
+from settings import REDIS_URL
 from tests.conftest import Cache
+
+db_redis = Redis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
 
 
 def test_get_posts_none(client: Any, answer: dict) -> None:
@@ -10,7 +14,7 @@ def test_get_posts_none(client: Any, answer: dict) -> None:
     assert response.json() == answer
 
 
-def test_get_post_none(client: Any, post: list) -> None:
+def test_get_post_none(client: Any) -> None:
     response = client.get("/api/posts/1000")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
