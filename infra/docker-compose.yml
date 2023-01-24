@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   db:
-    container_name: db
+    container_name: ${POSTGRES_SERVER}
     image: postgres:13.0-alpine
     restart: always
     volumes:
@@ -13,13 +13,13 @@ services:
       - 5432:5432
 
   redis:
-    container_name: redis
+    container_name: ${REDIS_HOST}
     image: redis:latest
     restart: always
-    volumes:
-      - ./data:/data
     ports:
       - 6379:6379
+    volumes:
+      - redis_data:/data
 
   backend:
     container_name: backend
@@ -53,3 +53,4 @@ services:
 volumes:
   media_value:
   postgres_data:
+  redis_data:
