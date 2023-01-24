@@ -50,7 +50,7 @@ async def get_post(post_id: int) -> Any:
     if not query:
         return NOT_FOUND
     query_dict = dict(query)
-    like_redis = db_redis.hgetall(f"id={post_id}")
+    like_redis: dict = db_redis.hgetall(f"id={post_id}")
 
     if not like_redis:
         like_redis = dict(await db_like.count(post_id))
