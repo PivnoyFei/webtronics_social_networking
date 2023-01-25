@@ -8,11 +8,13 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.hash import bcrypt
 from pydantic import ValidationError
-from users.models import Token, User
+from redis import Redis
+from settings import REDIS_URL
+from users.models import User
 from users.schemas import TokenPayload
 
 db_user = User(database)
-db_token = Token(database)
+db_redis = Redis.from_url(REDIS_URL, decode_responses=True)
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/auth/token/login",
     scheme_name="JWT"
@@ -75,11 +77,10 @@ async def check_token(token: str, secret: str, refresh_host: str = '') -> Any:
         if datetime.fromtimestamp(token_data.exp) < datetime.now():
             raise exception
         if refresh_host:
-            if await db_token.check_token(refresh_host, token_data.sub, token):
+            if db_redis.hmget(f"user={token_data.sub}", refresh_host)[0] == token:
                 return token_data.sub
-            else:
-                await db_token.delete_by_ip_token(refresh_host, token_data.sub, token)
-                raise exception
+            db_redis.hdel(f"user={token_data.sub}", refresh_host)
+            raise exception
 
     except (JWTError, ValidationError):
         raise exception
