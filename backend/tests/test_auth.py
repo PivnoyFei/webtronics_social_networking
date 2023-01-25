@@ -1,10 +1,10 @@
 from typing import Any
 
 from fastapi import status
-from tests.conftest import Cache
+from tests.conftest import HOST, Cache
 
 
-def test_post_user_create(client: Any, user_one: dict, user_other: dict) -> None:
+def test_post_user_create(client: Any, user_one: dict, user_other: dict, host: Any) -> None:
     response = client.post("/api/users/signup", json=user_one)
     assert response.status_code == status.HTTP_201_CREATED
     assert len(response.json()) == 6
@@ -19,7 +19,7 @@ def test_post_user_create(client: Any, user_one: dict, user_other: dict) -> None
 
 
 def test_post_user_create_with_error(
-    client: Any, user_validator: dict, email_exists: dict, username_exists: dict
+    client: Any, user_validator: dict, email_exists: dict, username_exists: dict, host: Any
 ) -> None:
     response = client.post("/api/users/signup", json=user_validator)
     assert response.json() == {'detail': 'Unacceptable symbols'}
@@ -44,6 +44,22 @@ def test_post_login_incorrect(client: Any, user_one: dict, host: Any) -> None:
     response = client.post("/api/auth/token/login", data=data)
     assert response.json() == {"detail": "Incorrect username"}
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_post_login_max_10(client: Any, user_one: dict, host: Any) -> None:
+    data = {"username": user_one["username"], "password": user_one["password"]}
+    response = client.post("/api/auth/token/login", data=data)
+    assert response.status_code == status.HTTP_200_OK
+    Cache.refresh_token = {"refresh_token": response.json()["refresh_token"]}
+
+    for num in range(1, 12):
+        host.host = f"127.0.0.{num}"
+        response = client.post("/api/auth/token/login", data=data)
+        assert response.status_code == status.HTTP_200_OK
+
+    host.host = HOST
+    response = client.post("/api/auth/token/refresh", json=Cache.refresh_token)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_post_login(client: Any, user_one: dict, user_other: dict, host: Any) -> None:

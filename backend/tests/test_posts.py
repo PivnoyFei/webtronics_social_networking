@@ -1,11 +1,7 @@
 from typing import Any
 
 from fastapi import status
-from redis import Redis
-from settings import REDIS_URL
 from tests.conftest import Cache
-
-db_redis = Redis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
 
 
 def test_get_posts_none(client: Any, answer: dict) -> None:

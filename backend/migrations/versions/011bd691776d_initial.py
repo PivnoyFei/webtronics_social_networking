@@ -1,15 +1,15 @@
 """Initial
 
-Revision ID: f7c7d5061c32
+Revision ID: 011bd691776d
 Revises: 
-Create Date: 2023-01-20 08:50:34.800740
+Create Date: 2023-01-25 15:15:31.148938
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = 'f7c7d5061c32'
+revision = '011bd691776d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -29,14 +29,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
-    op.create_table('auth_token',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('ip', sa.String(length=45), nullable=True),
-    sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_auth_token_ip'), 'auth_token', ['ip'], unique=False)
     op.create_table('posts',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('text', sa.Text(), nullable=True),
@@ -72,8 +64,6 @@ def downgrade() -> None:
     op.drop_table('likes')
     op.drop_table('dislikes')
     op.drop_table('posts')
-    op.drop_index(op.f('ix_auth_token_ip'), table_name='auth_token')
-    op.drop_table('auth_token')
     op.drop_index(op.f('ix_users_username'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')

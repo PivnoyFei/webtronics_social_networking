@@ -1,7 +1,6 @@
 from asyncpg import Record
 from db import Base, metadata
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Table,
-                        insert, select)
+from sqlalchemy import Column, DateTime, Integer, String, Table, insert, select
 from sqlalchemy.sql import func
 from users.schemas import UserCreate
 
@@ -15,34 +14,6 @@ users = Table(
     Column("last_name", String(150)),
     Column("timestamp", DateTime(timezone=True), default=func.now()),
 )
-auth_token = Table(
-    "auth_token", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("ip", String(45), index=True),
-    Column("user_id", Integer, ForeignKey("users.id", ondelete='CASCADE')),
-)
-
-
-class Token(Base):
-    async def create_token(self, ip: str, user_id: int) -> int:
-        return await self.database.execute(
-            insert(auth_token).values(ip=ip, user_id=user_id)
-        )
-
-    async def check_token(self, ip: str, user_id: int) -> Record | None:
-        """ Returns information about the owner of the specified token. """
-        return await self.database.fetch_one(
-            select(auth_token.c.user_id)
-            .where(
-                auth_token.c.ip == ip,
-                auth_token.c.user_id == user_id
-            )
-        )
-
-    async def delete_by_id(self, user_id: int) -> None:
-        await self.database.execute(
-            auth_token.delete().where(auth_token.c.user_id == user_id)
-        )
 
 
 class User(Base):

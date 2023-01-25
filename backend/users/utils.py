@@ -8,11 +8,13 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.hash import bcrypt
 from pydantic import ValidationError
-from users.models import Token, User
+from redis import Redis
+from settings import REDIS_URL
+from users.models import User
 from users.schemas import TokenPayload
 
 db_user = User(database)
-db_token = Token(database)
+db_redis = Redis.from_url(REDIS_URL, decode_responses=True)
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/auth/token/login",
     scheme_name="JWT"
@@ -29,7 +31,7 @@ async def verify_password(password: str, hashed_pass: str) -> bool:
     return bcrypt.verify(password, hashed_pass)
 
 
-async def _get_token(sub: str, secret: str, expire_minutes: int) -> str:
+async def _get_token(sub: int, secret: str, expire_minutes: int) -> str:
     """ Called from create_access_token and create_refresh_token. """
     exp = datetime.utcnow() + timedelta(minutes=expire_minutes)
     to_encode = {"exp": exp, "sub": str(sub)}
@@ -37,7 +39,7 @@ async def _get_token(sub: str, secret: str, expire_minutes: int) -> str:
     return encoded_jwt
 
 
-async def create_access_token(sub: str) -> str:
+async def create_access_token(sub: int) -> str:
     """ Creates a access token. """
     return await _get_token(
         sub,
@@ -46,7 +48,7 @@ async def create_access_token(sub: str) -> str:
     )
 
 
-async def create_refresh_token(sub: str) -> str:
+async def create_refresh_token(sub: int) -> str:
     """ Creates a refresh token. """
     return await _get_token(
         sub,
@@ -72,14 +74,12 @@ async def check_token(token: str, secret: str, refresh_host: str = '') -> Any:
         )
         token_data = TokenPayload(**payload)
 
-        if not refresh_host:
-            if datetime.fromtimestamp(token_data.exp) < datetime.now():
-                raise exception
-        else:
-            if await db_token.check_token(refresh_host, token_data.sub):
+        if datetime.fromtimestamp(token_data.exp) < datetime.now():
+            raise exception
+        if refresh_host:
+            if db_redis.hmget(f"user={token_data.sub}", refresh_host)[0] == token:
                 return token_data.sub
-            else:
-                await db_token.delete_by_id(token_data.sub)
+            db_redis.hdel(f"user={token_data.sub}", refresh_host)
             raise exception
 
     except (JWTError, ValidationError):
@@ -89,6 +89,17 @@ async def check_token(token: str, secret: str, refresh_host: str = '') -> Any:
     if not user:
         raise exception
     return user
+
+
+async def redis_count_token_and_save(user_id: int, host: str) -> dict[str, str]:
+    access_token = await create_access_token(user_id)
+    refresh_token = await create_refresh_token(user_id)
+
+    if len(db_redis.hgetall(f"user={user_id}")) > 10:
+        db_redis.delete(f"user={user_id}")
+    db_redis.hmset(f"user={user_id}", {host: refresh_token})
+
+    return {"access_token": access_token, "refresh_token": refresh_token}
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> type:
