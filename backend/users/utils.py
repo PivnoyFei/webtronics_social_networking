@@ -91,6 +91,17 @@ async def check_token(token: str, secret: str, refresh_host: str = '') -> Any:
     return user
 
 
+async def redis_count_token_and_save(user_id: int, host: str):
+    access_token = await create_access_token(user_id)
+    refresh_token = await create_refresh_token(user_id)
+
+    if len(db_redis.hgetall(f"user={user_id}")) > 10:
+        db_redis.delete(f"user={user_id}")
+    db_redis.hmset(f"user={user_id}", {host: refresh_token})
+
+    return {"access_token": access_token, "refresh_token": refresh_token}
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> type:
     """Проверяет текущего авторизированного пользователя."""
     return await check_token(token, settings.JWT_SECRET_KEY)

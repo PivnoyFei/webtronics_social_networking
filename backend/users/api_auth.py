@@ -31,11 +31,7 @@ async def login(request: Request, user: OAuth2Form = Depends()) -> Any:
             status.HTTP_400_BAD_REQUEST
         )
     if request.client is not None:
-        access_token = await utils.create_access_token(user_cls.id)
-        refresh_token = await utils.create_refresh_token(user_cls.id)
-
-        db_redis.hmset(f"user={user_cls.id}", {request.client.host: refresh_token})
-        return {"access_token": access_token, "refresh_token": refresh_token}
+        return await utils.redis_count_token_and_save(user_cls.id, request.client.host)
 
 
 @router.post('/token/refresh', response_model=TokenSchema, status_code=status.HTTP_200_OK)
@@ -44,18 +40,9 @@ async def refresh_token(request: Request, token: TokenBase) -> Any:
         user_id = await utils.check_token(
             token.refresh_token, JWT_REFRESH_SECRET_KEY, request.client.host
         )
-        if not user_id:
-            return RedirectResponse('/api/auth/token/login', status.HTTP_302_FOUND)
-
-        access_token = await utils.create_access_token(user_id)
-        refresh_token = await utils.create_refresh_token(user_id)
-
-        if len(db_redis.hgetall(f"user={user_id}")) > 10:
-            db_redis.delete(f"user={user_id}")
-        db_redis.hmset(f"user={user_id}", {request.client.host: refresh_token})
-
-        return {"access_token": access_token, "refresh_token": refresh_token}
-
+        if user_id:
+            return await utils.redis_count_token_and_save(user_id, request.client.host)
+        return RedirectResponse('/api/auth/token/login', status.HTTP_302_FOUND)
 
 @router.post("/token/logout", status_code=status.HTTP_404_NOT_FOUND)
 async def logout(user: UserOut = Depends(utils.get_current_user)) -> None:
