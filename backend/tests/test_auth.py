@@ -4,7 +4,7 @@ from fastapi import status
 from tests.conftest import Cache
 
 
-def test_post_user_create(client: Any, user_one: dict, user_other: dict) -> None:
+def test_post_user_create(client: Any, user_one: dict, user_other: dict, host: Any) -> None:
     response = client.post("/api/users/signup", json=user_one)
     assert response.status_code == status.HTTP_201_CREATED
     assert len(response.json()) == 6
@@ -19,7 +19,7 @@ def test_post_user_create(client: Any, user_one: dict, user_other: dict) -> None
 
 
 def test_post_user_create_with_error(
-    client: Any, user_validator: dict, email_exists: dict, username_exists: dict
+    client: Any, user_validator: dict, email_exists: dict, username_exists: dict, host: Any
 ) -> None:
     response = client.post("/api/users/signup", json=user_validator)
     assert response.json() == {'detail': 'Unacceptable symbols'}

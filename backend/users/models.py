@@ -1,5 +1,8 @@
+from datetime import datetime, timedelta
+
 from asyncpg import Record
 from db import Base, metadata
+from settings import REFRESH_TOKEN_EXPIRE_MINUTES
 from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Table,
                         insert, select)
 from sqlalchemy.sql import func
@@ -19,29 +22,64 @@ auth_token = Table(
     "auth_token", metadata,
     Column("id", Integer, primary_key=True),
     Column("ip", String(45), index=True),
+    Column("refresh_token", String, index=True),
+    Column("created", DateTime),
     Column("user_id", Integer, ForeignKey("users.id", ondelete='CASCADE')),
 )
 
 
 class Token(Base):
-    async def create_token(self, ip: str, user_id: int) -> int:
+    async def create_token(self, ip: str, user_id: int, refresh_token: str) -> int:
         return await self.database.execute(
-            insert(auth_token).values(ip=ip, user_id=user_id)
+            insert(auth_token).values(
+                ip=ip,
+                refresh_token=refresh_token,
+                created=datetime.now() + timedelta(weeks=REFRESH_TOKEN_EXPIRE_MINUTES),
+                user_id=user_id,
+            )
         )
 
-    async def check_token(self, ip: str, user_id: int) -> Record | None:
+    async def check_token(self, ip: str, user_id: int, refresh_token: str) -> Record | None:
         """ Returns information about the owner of the specified token. """
         return await self.database.fetch_one(
             select(auth_token.c.user_id)
             .where(
                 auth_token.c.ip == ip,
-                auth_token.c.user_id == user_id
+                auth_token.c.user_id == user_id,
+                auth_token.c.refresh_token == refresh_token,
+                auth_token.c.created > datetime.now()
             )
+        )
+
+    async def count_token_user(self, user_id: int) -> Record:
+        return await self.database.fetch_one(
+            select(
+                func.count(auth_token.c.refresh_token).label("token"),
+            )
+            .where(auth_token.c.user_id == user_id)
+            .group_by(auth_token.c.user_id)
+        )
+
+    async def update_token(self, ip: str, user_id: int, token: str) -> None:
+        await self.database.fetch_one(
+            auth_token.update()
+            .where(
+                auth_token.c.ip == ip,
+                auth_token.c.user_id == user_id,
+                auth_token.c.refresh_token == token
+            )
+            .values(refresh_token=token)
         )
 
     async def delete_by_id(self, user_id: int) -> None:
         await self.database.execute(
             auth_token.delete().where(auth_token.c.user_id == user_id)
+        )
+
+    async def delete_by_ip_token(self, ip: str, user_id: int, token: str) -> None:
+        await self.database.execute(
+            auth_token.delete()
+            .where(auth_token.c.ip == ip, auth_token.c.refresh_token == token)
         )
 
 

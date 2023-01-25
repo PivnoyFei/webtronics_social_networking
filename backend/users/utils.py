@@ -72,15 +72,14 @@ async def check_token(token: str, secret: str, refresh_host: str = '') -> Any:
         )
         token_data = TokenPayload(**payload)
 
-        if not refresh_host:
-            if datetime.fromtimestamp(token_data.exp) < datetime.now():
-                raise exception
-        else:
-            if await db_token.check_token(refresh_host, token_data.sub):
+        if datetime.fromtimestamp(token_data.exp) < datetime.now():
+            raise exception
+        if refresh_host:
+            if await db_token.check_token(refresh_host, token_data.sub, token):
                 return token_data.sub
             else:
-                await db_token.delete_by_id(token_data.sub)
-            raise exception
+                await db_token.delete_by_ip_token(refresh_host, token_data.sub, token)
+                raise exception
 
     except (JWTError, ValidationError):
         raise exception
