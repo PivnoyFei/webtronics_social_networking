@@ -44,6 +44,7 @@ async def refresh_token(request: Request, token: TokenBase) -> Any:
             return await utils.redis_count_token_and_save(user_id, request.client.host)
         return RedirectResponse('/api/auth/token/login', status.HTTP_302_FOUND)
 
+
 @router.post("/token/logout", status_code=status.HTTP_404_NOT_FOUND)
 async def logout(user: UserOut = Depends(utils.get_current_user)) -> None:
     db_redis.delete(f"user={user.id}")

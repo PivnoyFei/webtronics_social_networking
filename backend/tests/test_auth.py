@@ -48,7 +48,7 @@ def test_post_login_incorrect(client: Any, user_one: dict, host: Any) -> None:
 
 def test_post_login_max_10(client: Any, user_one: dict, host: Any) -> None:
     data = {"username": user_one["username"], "password": user_one["password"]}
-    host.host = f"127.0.0.1"
+    host.host = "127.0.0.1"
     response = client.post("/api/auth/token/login", data=data)
     assert response.status_code == status.HTTP_200_OK
     Cache.refresh_token = {"refresh_token": response.json()["refresh_token"]}
@@ -58,7 +58,7 @@ def test_post_login_max_10(client: Any, user_one: dict, host: Any) -> None:
         response = client.post("/api/auth/token/login", data=data)
         assert response.status_code == status.HTTP_200_OK
 
-    host.host = f"127.0.0.1"
+    host.host = "127.0.0.1"
     response = client.post("/api/auth/token/refresh", json=Cache.refresh_token)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 

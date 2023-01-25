@@ -31,7 +31,7 @@ async def verify_password(password: str, hashed_pass: str) -> bool:
     return bcrypt.verify(password, hashed_pass)
 
 
-async def _get_token(sub: str, secret: str, expire_minutes: int) -> str:
+async def _get_token(sub: int, secret: str, expire_minutes: int) -> str:
     """ Called from create_access_token and create_refresh_token. """
     exp = datetime.utcnow() + timedelta(minutes=expire_minutes)
     to_encode = {"exp": exp, "sub": str(sub)}
@@ -39,7 +39,7 @@ async def _get_token(sub: str, secret: str, expire_minutes: int) -> str:
     return encoded_jwt
 
 
-async def create_access_token(sub: str) -> str:
+async def create_access_token(sub: int) -> str:
     """ Creates a access token. """
     return await _get_token(
         sub,
@@ -48,7 +48,7 @@ async def create_access_token(sub: str) -> str:
     )
 
 
-async def create_refresh_token(sub: str) -> str:
+async def create_refresh_token(sub: int) -> str:
     """ Creates a refresh token. """
     return await _get_token(
         sub,
@@ -91,7 +91,7 @@ async def check_token(token: str, secret: str, refresh_host: str = '') -> Any:
     return user
 
 
-async def redis_count_token_and_save(user_id: int, host: str):
+async def redis_count_token_and_save(user_id: int, host: str) -> dict[str, str]:
     access_token = await create_access_token(user_id)
     refresh_token = await create_refresh_token(user_id)
 
