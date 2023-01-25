@@ -1,7 +1,7 @@
 from typing import Any
 
 from fastapi import status
-from tests.conftest import Cache
+from tests.conftest import HOST, Cache
 
 
 def test_post_user_create(client: Any, user_one: dict, user_other: dict, host: Any) -> None:
@@ -48,17 +48,16 @@ def test_post_login_incorrect(client: Any, user_one: dict, host: Any) -> None:
 
 def test_post_login_max_10(client: Any, user_one: dict, host: Any) -> None:
     data = {"username": user_one["username"], "password": user_one["password"]}
-    host.host = "127.0.0.1"
     response = client.post("/api/auth/token/login", data=data)
     assert response.status_code == status.HTTP_200_OK
     Cache.refresh_token = {"refresh_token": response.json()["refresh_token"]}
 
-    for num in range(2, 12):
+    for num in range(1, 12):
         host.host = f"127.0.0.{num}"
         response = client.post("/api/auth/token/login", data=data)
         assert response.status_code == status.HTTP_200_OK
 
-    host.host = "127.0.0.1"
+    host.host = HOST
     response = client.post("/api/auth/token/refresh", json=Cache.refresh_token)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
